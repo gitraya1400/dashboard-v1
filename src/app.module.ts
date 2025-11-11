@@ -8,10 +8,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RespondenModule } from './responden/responden.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthController } from './auth/auth.controller';
+import { EmailModule } from './mailer/mailer.module';
 
 
 @Module({
-  imports: [LinkModule, PrismaModule,AuthModule, ConfigModule.forRoot({
+  imports: [LinkModule, PrismaModule,AuthModule,EmailModule, ConfigModule.forRoot({
     isGlobal: true,  
   }), RespondenModule,],
   controllers: [AppController, AuthController],

@@ -3,13 +3,11 @@ import { RespondenService } from './responden.service';
 import { CreateRespondenDto } from './dto/create-responden.dto';
 import { UpdateRespondenDto } from './dto/update-responden.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as XLSX from 'xlsx';
 
 @Controller('responden')
 export class RespondenController {
   constructor(private readonly respondenService: RespondenService) { }
 
-  // ✅ CREATE responden baru
   @Post()
   async create(@Body() createRespondenDto: CreateRespondenDto) {
     return this.respondenService.create(createRespondenDto);
@@ -29,13 +27,11 @@ export class RespondenController {
     }
   }
 
-  // ✅ READ semua responden
   @Get()
   async findAll() {
     return this.respondenService.findAll();
   }
 
-  // ✅ READ responden berdasarkan ID
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const responden = await this.respondenService.findOne(+id);
@@ -45,7 +41,6 @@ export class RespondenController {
     return responden;
   }
 
-  // ✅ UPDATE responden berdasarkan ID
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateRespondenDto: UpdateRespondenDto) {
     try {

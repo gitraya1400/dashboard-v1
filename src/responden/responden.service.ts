@@ -9,7 +9,6 @@ import * as XLSX from 'xlsx';
 export class RespondenService {
   constructor(private prisma: PrismaService) { }
 
-  // ✅ CREATE responden baru
   async create(dto: CreateRespondenDto) {
     try {
       const existing = await this.prisma.responden.findUnique({
@@ -33,7 +32,6 @@ export class RespondenService {
     }
   }
 
-  // ✅ READ semua responden
   async findAll() {
     const list = await this.prisma.responden.findMany({
       include: { tautan: true },
@@ -42,7 +40,6 @@ export class RespondenService {
     return list.map((r) => new RespondenEntity(r));
   }
 
-  // ✅ READ satu responden berdasarkan ID
   async findOne(id: number) {
     const responden = await this.prisma.responden.findUnique({
       where: { id },
@@ -56,7 +53,6 @@ export class RespondenService {
     return new RespondenEntity(responden);
   }
 
-  // ✅ UPDATE responden
   async update(id: number, dto: UpdateRespondenDto) {
     const existing = await this.prisma.responden.findUnique({ where: { id } });
 
@@ -75,7 +71,6 @@ export class RespondenService {
     return new RespondenEntity(updated);
   }
 
-  // ✅ DELETE responden
   async remove(id: number) {
     const existing = await this.prisma.responden.findUnique({ where: { id } });
 
