@@ -15,7 +15,7 @@ export class RespondenController {
 
   @Post('excel')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadExcel(@UploadedFile() file: Express.Multer.File) {
+  async uploadExcel(@UploadedFile() file: any) {
     if (!file) {
       throw new BadRequestException('File tidak ditemukan');
     }
