@@ -89,7 +89,7 @@ export class RespondenService {
     return { message: `Responden dengan ID ${id} berhasil dihapus` };
   }
 
-  async insertManyResponden(file: Express.Multer.File) {
+  async insertManyResponden(file: any) {
     
     try {
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });

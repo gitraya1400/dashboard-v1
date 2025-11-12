@@ -9,13 +9,21 @@ import { RespondenModule } from './responden/responden.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthController } from './auth/auth.controller';
 import { EmailModule } from './mailer/mailer.module';
-
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
-  imports: [LinkModule, PrismaModule,AuthModule,EmailModule, ConfigModule.forRoot({
-    isGlobal: true,  
-  }), RespondenModule,],
+  imports: [
+    LinkModule,
+    PrismaModule,
+    AuthModule,
+    EmailModule,
+    DashboardModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    RespondenModule,
+  ],
   controllers: [AppController, AuthController],
-  providers: [AppService,PrismaService,ConfigService],
+  providers: [AppService, PrismaService, ConfigService],
 })
 export class AppModule {}
