@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, HttpStatus, UnauthorizedException, Req } from '@nestjs/common';
 import { LinkService } from './link.service';
+import { SendRespondenBulkDto } from 'src/mailer/dto/send-responden-bulk.dto'; // <-- ADDED
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 
@@ -7,72 +8,12 @@ import { AuthService } from 'src/auth/auth.service';
 export class LinkController {
     constructor(private linkService: LinkService, private prisma: PrismaService, private authService: AuthService) { }
 
-    // @Post('get-form')
-    // async getFormLink(@Body('token') token: string) {
-    //     return this.linkService.getFormLink(token);
-    // }
-    // @Post('get-form')
-    // async getForm(@Body('token') token: string, @Req() req: Request) {
-    //     try {
-    //         const tautan = await this.prisma.tautan.findUnique({ where: { token: token } });
-    //         if (!tautan) {
-    //             return {
-    //                 message: 'Tautan tidak ditemukan',
-    //                 STATUS_CODES: HttpStatus.NOT_FOUND
-    //             }
-    //         }
-
-    //         if (tautan.isUsed === 0) {
-    //             const jwt = await this.authService.generateToken(`${tautan.idResponden}${tautan.token}`);
-    //             await this.prisma.tautan.update({
-    //                 where: { id: tautan.id },
-    //                 data: {
-    //                     sessions: jwt,
-    //                     isUsed: 1,
-    //                     activeAt: new Date(),
-    //                 },
-    //             });
-
-
-    //             return { tautanForm: tautan.tautanForm, STATUS_CODES: 200, token: jwt }
-    //         }
-
-    //         const authHeader = req.headers['authorization'];
-    //         if (!authHeader) return {
-    //             message: 'Header not foundd',
-    //             STATUS_CODES: HttpStatus.UNAUTHORIZED
-    //         }
-
-
-    //         const tokenHeader = authHeader.split(' ')[1];
-    //         if (!tokenHeader) {
-    //             return {
-    //                 message: 'Header not found',
-    //                 STATUS_CODES: HttpStatus.UNAUTHORIZED
-    //             }
-    //         }
-    //         const payload = await this.authService.validateToken(tokenHeader);
-    //         if (!payload) {
-    //             return {
-    //                 message: 'Tautan tidak valid',
-    //                 STATUS_CODES: HttpStatus.UNAUTHORIZED
-    //             }
-    //         }
-    //         return {
-    //             tautanForm: tautan.tautanForm, STATUS_CODES: 200
-    //         }
-
-    //     } catch (error) {
-    //         return {
-    //             message: 'Tautan tidak valid',
-    //             STATUS_CODES: HttpStatus.UNAUTHORIZED
-    //         }
-    //     }
-    // }
+    // --- Perbaikan pada POST /api/link/get-form (Agar kolom sessions terisi) ---
     @Post('get-form')
     async getForm(@Body('token') token: string, @Req() req: Request) {
         try {
             const authHeader = req.headers['authorization'];
+            // jika ada Authorization header, validasi dan kembalikan payload
             if (authHeader){
                 const payload = await this.authService.validateToken(authHeader.split(' ')[1]);
                 
@@ -83,9 +24,11 @@ export class LinkController {
                     }
                 }
                 return {
-                    tautanForm: payload.tautanForm, STATUS_CODES: 200
+                    tautanForm: payload.tautanForm, STATUS_CODES: HttpStatus.OK
                 }
             }
+
+            // tanpa header: gunakan token body untuk mencari tautan yang belum digunakan
             if(!token){
                 return {
                     message: 'Token tidak ditemukan',
@@ -104,16 +47,19 @@ export class LinkController {
                     STATUS_CODES: HttpStatus.NOT_FOUND
                 }
             }
+            
+            // Generate JWT sesi dan simpan ke kolom sessions serta tandai isUsed
+            const jwt = await this.authService.generateToken({token: res.token, tautanForm:res.tautanForm});
             await this.prisma.tautan.update({
                 where: { token: String(res.token) },
                 data: {
                     isUsed: 1,
                     activeAt: new Date(),
+                    sessions: jwt, // <-- Menyimpan JWT ke kolom sessions
                 },
             });
-            const jwt = await this.authService.generateToken({token: res.token, tautanForm:res.tautanForm});
-            return { tautanForm: res.tautanForm, STATUS_CODES: 200, token: jwt }
-            // return{hello:authHeader}
+
+            return { tautanForm: res.tautanForm, STATUS_CODES: HttpStatus.OK, token: jwt }
         } catch (error) {
             return {
                 error,
@@ -121,7 +67,26 @@ export class LinkController {
             }
         }
     }
-
+    
+    // --- ENDPOINT BARU UNTUK PENGIRIMAN MASSAL (SEKALI JALAN) ---
+    @Post('send-invitation-bulk')
+    async sendToAllResponden(@Body() dto: SendRespondenBulkDto) {
+        try {
+            if (!dto.textTemplate && !dto.htmlTemplate) {
+                return {
+                    message: 'Mohon sediakan template textTemplate atau htmlTemplate',
+                    STATUS_CODES: HttpStatus.BAD_REQUEST,
+                };
+            }
+            return this.linkService.sendBulkEmailWithLink(dto);
+        } catch (error) {
+            return {
+                message: error.message || 'Gagal mengirim email massal',
+                STATUS_CODES: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+            };
+        }
+    }
+    
     @Post('tautan')
     async createTautan(
         @Body('idResponden') idResponden: number,
